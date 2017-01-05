@@ -53,7 +53,6 @@ void setupWiFi(){
     }else{
         Serial.println(""); 
         Serial.println("Starting Access Point on the ESP8266"); 
-        WiFi.mode
         configure.detach(); 
     }
 }
