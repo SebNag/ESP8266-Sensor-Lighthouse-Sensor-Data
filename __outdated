@@ -1,0 +1,183 @@
+#include "ESP8266WiFi.h"
+#include "WiFiUdp.h"
+
+#include <memory>
+
+
+
+const char* ssid = "why-fi";
+const char* password = "pissoff321";
+
+typedef class SensorData 
+{
+    public:
+        SensorData(); 
+
+        uint8_t dataEle(int index) const;
+        void writeByte(const uint8_t data, const int pos);
+        void printDataArray() const; 
+
+        static int packageLen();
+        const static int arrayLen = 4; 
+        uint8_t  packetData[arrayLen];
+};
+
+SensorData::SensorData() : 
+    packetData{0}  
+{
+
+}
+
+inline int SensorData::packageLen() 
+{
+    return arrayLen; 
+}
+
+
+void SensorData::printDataArray() const
+{
+    Serial.println("Current Data: "); 
+    for(int i = 0; i < SensorData::packageLen(); ++i){
+        Serial.print(packetData[i]);
+    }
+}
+
+inline void SensorData::writeByte(const uint8_t data, const int pos)
+{
+    if(pos < arrayLen) {
+        packetData[pos] = data; 
+    }
+}
+
+inline uint8_t SensorData::dataEle(int index) const 
+{
+    return packetData[index];
+}
+
+
+class NetworkIntf 
+{
+    public:
+        void UDP_SendSensorData(SensorData& data); 
+        void UDP_SetHostConfig(uint16_t port, IPAddress hostIP); 
+
+
+        virtual ~NetworkIntf()  = 0; 
+    private: 
+        virtual void sendData(SensorData& data)          = 0;
+        virtual void setHostPort(uint16_t port)          = 0; 
+        virtual void setHostIP(IPAddress hostIP)         = 0; 
+};
+
+inline void NetworkIntf::UDP_SetHostConfig(uint16_t port, IPAddress hostIP)
+{
+    setHostPort(port); 
+    setHostIP(hostIP); 
+}
+
+inline void NetworkIntf::UDP_SendSensorData(SensorData& data)
+{
+    sendData(data);
+}
+
+inline NetworkIntf::~NetworkIntf()
+{
+
+}
+
+class UDPClient : public NetworkIntf
+{
+    public: 
+        UDPClient(); 
+        ~UDPClient();  
+    private: 
+        void sendData(SensorData& data); 
+        void setHostPort(uint16_t port); 
+        void setHostIP(IPAddress hostIP); 
+
+        WiFiUDP     mUDP; 
+        SensorData  mSensorData; 
+        IPAddress   mHostIP; 
+        uint16_t    mHostPort;  
+};
+
+UDPClient::UDPClient() : 
+    mUDP(),
+    mSensorData(),
+    mHostIP(), 
+    mHostPort()
+{
+
+}
+
+UDPClient::~UDPClient() 
+{
+
+}
+
+inline void UDPClient::sendData(SensorData& data) 
+{
+    mUDP.beginPacket(mHostIP, mHostPort); 
+    for(int i =  0; i < SensorData::packageLen(); i++){
+          mUDP.write(data.dataEle(i));
+          Serial.println(data.dataEle(i));       
+    }
+    mUDP.endPacket(); 
+}
+
+inline void UDPClient::setHostPort(uint16_t port)
+{
+    mHostPort = port;  
+}
+
+inline void UDPClient::setHostIP(IPAddress hostIP)
+{
+    mHostIP = hostIP; 
+}
+
+typedef std::unique_ptr<NetworkIntf> network_ptr;  
+network_ptr pNetwork = nullptr; 
+
+network_ptr createNetwork()
+{
+    network_ptr pNetwork = network_ptr(new UDPClient()); 
+    IPAddress remoteHostIP(192, 168, 2, 105);
+    pNetwork->UDP_SetHostConfig(8000, remoteHostIP);
+    return pNetwork; 
+}
+ 
+void receiveData() {
+    SensorData data;
+    int counter = 0;
+    while (counter < SensorData::packageLen() && Serial.available()) {
+        data.writeByte(Serial.read(), counter); 
+        counter++;
+    }
+    pNetwork->UDP_SendSensorData(data);
+}
+
+void setup()
+{ 
+    Serial.begin(115200); 
+    delay(10);
+
+    WiFi.mode(WIFI_STA); 
+    WiFi.begin(ssid, password);
+    while (WiFi.status() != WL_CONNECTED) {
+        delay(500);
+        Serial.print(".");
+    }
+
+    Serial.println("");
+    Serial.println("WiFi connected");
+    Serial.println("IP address: ");
+    Serial.print(WiFi.localIP()); 
+
+    pinMode(2 ,INPUT); 
+    attachInterrupt(2, receiveData, HIGH);
+    pNetwork = createNetwork(); 
+}
+
+void loop() {
+    delay(1000); 
+}
