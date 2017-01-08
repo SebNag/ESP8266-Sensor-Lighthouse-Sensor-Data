@@ -7,15 +7,12 @@
 class SensorData 
 {
     public:
-        SensorData(); 
-
-        uint8_t dataEle(int index) const;
-        void writeByte(const uint8_t data, const int pos);
+        SensorData(unsigned long timestamp); 
         void printDataArray() const; 
 
-        static int packageLen();
         const static int arrayLen = 4; 
         uint8_t  packetData[arrayLen];
+        long unsigned timestamp;
 };
 
 #endif // SENSORDATA_H

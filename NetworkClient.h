@@ -19,7 +19,6 @@ class NetworkClient : public NetworkIntf
         void setHostIP(IPAddress hostIP); 
 
         WiFiUDP     mUDP; 
-        SensorData  mSensorData; 
         IPAddress   mHostIP; 
         uint16_t    mHostPort;  
 };

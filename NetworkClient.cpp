@@ -2,7 +2,6 @@
 
 NetworkClient::NetworkClient() : 
     mUDP(),
-    mSensorData(),
     mHostIP(), 
     mHostPort()
 {
@@ -16,10 +15,14 @@ NetworkClient::~NetworkClient()
 
 inline void NetworkClient::sendData(SensorData& data) 
 {
-    mUDP.beginPacket(mHostIP, mHostPort); 
-    for(int i =  0; i < SensorData::packageLen(); i++){
-          mUDP.write(data.dataEle(i));
-          Serial.println(data.dataEle(i));       
+    mUDP.beginPacket(mHostIP, mHostPort);
+    uint8_t *addr = (uint8_t*)&data.timestamp;
+    for(int i =  0; i < 2; i++){
+          mUDP.write(addr[i]);
+    }
+    for(int i =  0; i < data.arrayLen; i++){
+          mUDP.write(data.packetData[i]);
+          Serial.println(data.packetData[i]);       
     }
     mUDP.endPacket(); 
 }

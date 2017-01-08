@@ -6,8 +6,8 @@
 
 #include <memory>
 
-static const char* ssid = "nix";
-static const char* password = "!20weiN15";
+static const char* ssid = "nsa";
+static const char* password = "shinternet";
 //static Ticker configure; 
 
 typedef std::unique_ptr<NetworkIntf> network_ptr;  
@@ -16,17 +16,17 @@ network_ptr pNetwork = nullptr;
 network_ptr createNetwork()
 {
     network_ptr pNetwork = network_ptr(new NetworkClient()); 
-    IPAddress remoteHostIP(192,168,178,134);
+    IPAddress remoteHostIP(192,168,43,141);
     pNetwork->UDP_SetHostConfig(8000, remoteHostIP);
     return pNetwork; 
 }
  
 void receiveData() {
-    SensorData data;
+    unsigned long timestamp = millis();
+    SensorData data(timestamp);
     int counter = 0;
-    while (counter < SensorData::packageLen() && digitalRead(2) == LOW) {
-        data.writeByte(Serial.read(), counter); 
-        counter++;
+    while (counter < data.arrayLen && digitalRead(2) == LOW) {
+        data.packetData[counter++] = Serial.read(); 
     }
     pNetwork->UDP_SendSensorData(data);
 }
