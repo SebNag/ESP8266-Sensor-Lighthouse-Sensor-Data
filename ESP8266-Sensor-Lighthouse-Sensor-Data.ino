@@ -22,10 +22,11 @@ network_ptr createNetwork()
 }
  
 void receiveData() {
-    unsigned long timestamp = millis();
-    SensorData data(timestamp);
+    //unsigned long timestamp = millis();
+    //SensorData data(timestamp);
+    SensorData data(0);
     int counter = 0;
-    while (counter < data.arrayLen && digitalRead(2) == LOW) {
+    while (counter < data.arrayLen && Serial.available) {
         data.packetData[counter++] = Serial.read(); 
     }
     pNetwork->UDP_SendSensorData(data);

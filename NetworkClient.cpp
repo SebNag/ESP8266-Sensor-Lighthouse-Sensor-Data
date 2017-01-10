@@ -22,7 +22,6 @@ inline void NetworkClient::sendData(SensorData& data)
     }
     for(int i =  0; i < data.arrayLen; i++){
           mUDP.write(data.packetData[i]);
-          Serial.println(data.packetData[i]);       
     }
     mUDP.endPacket(); 
 }
