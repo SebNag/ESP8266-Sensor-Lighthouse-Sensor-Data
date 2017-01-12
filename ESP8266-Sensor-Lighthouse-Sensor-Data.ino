@@ -6,8 +6,9 @@
 
 #include <memory>
 
-static const char* ssid = "nsa";
-static const char* password = "shinternet";
+static const char* ssid = "1-UTUM-Guest";
+static const char* password = "";
+static const int UARTbaudrate = 250000;
 //static Ticker configure; 
 
 typedef std::unique_ptr<NetworkIntf> network_ptr;  
@@ -16,7 +17,7 @@ network_ptr pNetwork = nullptr;
 network_ptr createNetwork()
 {
     network_ptr pNetwork = network_ptr(new NetworkClient()); 
-    IPAddress remoteHostIP(192,168,43,141);
+    IPAddress remoteHostIP(10,25,12,189);
     pNetwork->UDP_SetHostConfig(8000, remoteHostIP);
     return pNetwork; 
 }
@@ -24,12 +25,15 @@ network_ptr createNetwork()
 void receiveData() {
     //unsigned long timestamp = millis();
     //SensorData data(timestamp);
-    SensorData data(0);
-    int counter = 0;
-    while (counter < data.arrayLen && Serial.available) {
+    static SensorData data(0);
+    static int counter = 0;
+    while (counter < data.arrayLen && Serial.available()) {
         data.packetData[counter++] = Serial.read(); 
+        if(data.arrayLen  == counter){
+            counter = 0;
+            pNetwork->UDP_SendSensorData(data); 
+        }
     }
-    pNetwork->UDP_SendSensorData(data);
 }
 
 void setupWiFi(){
@@ -48,8 +52,8 @@ void setupWiFi(){
         Serial.println("IP address: ");
         Serial.print(WiFi.localIP()); 
 
-        pinMode(2 ,INPUT); 
-        attachInterrupt(2, receiveData, HIGH);
+        //pinMode(2 ,INPUT); 
+        //attachInterrupt(2, receiveData, HIGH);
         pNetwork = createNetwork(); 
         //configure.detach(); 
     }else{
@@ -61,7 +65,7 @@ void setupWiFi(){
 
 void setup()
 { 
-    Serial.begin(115200); 
+    Serial.begin(UARTbaudrate); 
 
     Serial.println("----------------------------"); 
     Serial.println("ESP8226 Transmit Sensor Data via UDP"); 
@@ -87,5 +91,5 @@ void setup()
 }
 
 void loop() {
-    delay(1000); 
+    receiveData(); 
 }
